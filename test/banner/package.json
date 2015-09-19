@@ -1,0 +1,37 @@
+{
+  "name": "name",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "Henner Woehler",
+  "license": "MIT",
+  "dependencies": {
+    "http-server": "^0.7.3",
+    "jshint": "^2.5.10",
+    "live-reload": "^0.2.0",
+    "loop-iterator": "0.0.2",
+    "nodemon": "^1.2.1",
+    "opener": "^1.4.0",
+    "parallelshell": "^1.0.0"
+  },
+  "scripts": {
+    "prebuild": "npm run clean -s",
+    "_build": "npm run build:scripts -s && npm run build:styles -s",
+    "build": "npm run build:styles -s",
+    "build:styles": "sass styles/style.scss styles/style.css",
+    "_watch": "nodemon -q -w assets/ --ext '.' --exec 'npm run build:styles'",
+    "_watch:build": "nodemon -q -w assets/ --ext '.' --exec 'npm run build'",
+    "watch": "nodemon --exec 'npm run build:styles' ./styles/style.scss",
+    "open:dev": "opener http://localhost:9090/index.html",
+    "_deploy:prod": "s3-cli sync ./dist/ s3://example-com/prod-site/",
+    "serve": "http-server ../ -p 9090 ",
+    "live-reload": "live-reload --port 35729",
+    "dev": "npm run open:dev -s & parallelshell \"npm run live-reload -s\" \"npm run serve -s\" \"npm run watch -s\"",
+    "build:images": "glue ./items/ --img=./images --css=./styles --sprite-namespace= --namespace= --margin=1",
+    "_build:images": "glue ./items/ --img=./images --css=./styles --sprite-namespace= --namespace= --margin=1 --project"
+  },
+  "devDependencies": {
+    "optimist": "^0.6.1",
+    "psd": "^3.1.0"
+  }
+}

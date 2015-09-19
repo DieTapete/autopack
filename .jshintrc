@@ -1,0 +1,13 @@
+{
+  "browser": true,
+  "unused": true,
+  "undef" : true,
+  "expr": true,
+  "asi" : true,
+  "boss" : true,
+  "camelcase" : false,
+  "quotmark" : false,
+  "strict" : false,
+  "esnext" : true,
+  "node": true
+}
