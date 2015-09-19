@@ -7,6 +7,8 @@ var concat = require('concat-files');
 var UglifyJS = require("uglify-js");
 var CleanCSS = require('clean-css');
 
+var chalk = require('chalk');
+
 var copy = require('copy-files');
 var glob = require("glob");
 var mkdirp = require('mkdirp');
@@ -30,27 +32,64 @@ const  MINIFY_HTML_DEFAULTS = {
 
 const VERBOSE = true;
 var _options = {},
-  scriptElements;
+  scriptElements,
+  originalCWD = process.cwd();
 
 module.exports = function(options){
   _options = sanitizeOptions(options);
+
+  try {
+    log('changing cwd to '+_options.basePath);
+    process.chdir(_options.basePath);
+  }
+  catch (err) {
+    console.error('chdir: ' + err);
+  }
+
+  //create output folder and sub directories
   mkdirp(_options.output.dir, function(err){
     if (err) throw err;
 
-    console.log(_options);
-    readFile(_options.entryFile, function(htmlString){
-      compile(htmlString);
+    var numSubDirectories = 0, numCreatedSubDirectories = 0;
+    _.each(_options.output, function(target){
+      if (target != _options.output.dir){
+        var directory = path.dirname(target);
+        if (directory != '.') {
+          log('Creating directory '+directory+' in output directory.');
+          numSubDirectories++;
+          mkdirp(path.join(_options.output.dir,directory), function(){
+            numCreatedSubDirectories++;
+            //All directories created, let's go.
+            if(numCreatedSubDirectories == numSubDirectories){
+              readFile(path.basename(_options.entryFile), function(htmlString){
+                compile(htmlString);
+              });
+              copyFiles();
+            }
+          });
+        }
+      }
     });
-    copyFiles();
   });
 }
 
+process.on('exit', function(code) {
+  try {
+    log('reverting cwd back to '+originalCWD);
+    process.chdir(originalCWD);
+    if (code == 0){
+      log(chalk.bgBlue.black.bold('\n Finished. You find your files neatly packed together in "'+_options.output.dir+'".'));
+    }
+  }
+  catch (err) {
+    console.error('chdir: ' + err);
+  }
+});
+
 function copyFiles(){
-  // var copyFiles = {};
+  logTitle('Copying files...');
   _.each(_options.copy, function(copyEntry){
-    //exclude output directory
-    // copyEntry ='!('+_options.output.dir+')'+copyEntry;
-    console.log("pattern:"+copyEntry);
+    log("file pattern: "+copyEntry);
     glob(copyEntry, {ignore:_options.output.dir}, function (err, files) {
       if (err){
         console.error(err);
@@ -58,15 +97,18 @@ function copyFiles(){
       else{
         if (files.length>0){
           _.each(files, function(file){
-            log('copying file '+file);
+            log('trying to copy file '+file);
             var targetFile = path.join(_options.output.dir, file);
-            mkdirp(path.dirname(targetFile), function (err) {
-                if (err) console.error(err);
-                else {
-                  fs.createReadStream(file).pipe(fs.createWriteStream(targetFile));
-                }
-            });
-
+            if (fs.lstatSync(targetFile).isFile()) {
+              mkdirp(path.dirname(targetFile), function (err) {
+                  if (err) console.error(err);
+                  else {
+                    fs.createReadStream(file).pipe(fs.createWriteStream(targetFile));
+                  }
+              });
+            }else{
+              log(chalk.bgYellow.black(targetFile +' is a directory. skipping.'));
+            }
           })
         }
       }
@@ -85,7 +127,8 @@ function copyFiles(){
 
 function compile(htmlString) {
   var out = _options.output;
-  log('compiling js files');
+  logTitle('compiling files');
+  log('compiling js files..');
   scriptElements = getScripts(htmlString);
   var jsString = concatJS(scriptElements);
   if (jsString.length>1){
@@ -94,7 +137,7 @@ function compile(htmlString) {
     });
   }
 
-  log('compiling css files');
+  log('compiling css files..');
   compileStyles(_.pluck(getStyles(htmlString), 'href'), path.join(out.dir, out.css), function(){
     log('done compiling css');
     // onComplete && onComplete();
@@ -112,7 +155,7 @@ function sanitizeOptions(options) {
   normalizePaths(options.minify.js.exclude);
   normalizePaths(options.minify.css.exclude);
 
-  options.basePath = path.dirname(options.output.html);
+  options.basePath = path.dirname(options.entryFile);
   // options.output.dir = options.output.dir;
   // options.entryFile = path.resolve('', '');
 
@@ -143,7 +186,7 @@ function getScripts(htmlString){
   scriptElements =  _.filter(scriptElements, function(element){
     var jsOptions = _options.minify.js;
     var result = !(isLocalJS(element.attribs) && _.contains(jsOptions.exclude, element.attribs.src));
-    result =  result && (jsOptions.local && isLocalJS(element.attribs)) || (jsOptions.inline && isInlineJS(element.attribs));
+    result = result && (jsOptions.local && isLocalJS(element.attribs)) || (jsOptions.inline && isInlineJS(element.attribs));
     return result;
   });
 
@@ -210,6 +253,7 @@ function concatJS(input){
   if (input.local.length) {
     result = UglifyJS.minify(input.local, {
       // outSourceMap: output+".map",
+      cwd:_options.basePath,
       compress:true});
     result = result.code;
   }
@@ -242,6 +286,7 @@ function compileHTML(data){
   var $ = cheerio.load(data),
       removedJS = false,
       removedCSS = false;
+  log('compiling html');
 
   //remove bundled js script tags
   $('script').each(function(index, element){
@@ -273,7 +318,7 @@ function compileHTML(data){
 
   var html = maybeMinifyHTML($.html());
   writeFile(path.join(_options.output.dir, _options.output.html), html, function(){
-    console.log('done compiling html');
+    log('done compiling html');
   });
 }
 
@@ -286,6 +331,8 @@ function maybeMinifyHTML(html){
 }
 
 function minifyStyles(input, output, onComplete){
+  // console.log('input:'+input);
+  // console.log('normalized:'+path.normalize(_options.basePath, input));
   readFile(input, function(data){
     var minifiedStyles = new CleanCSS().minify(data).styles;
     fs.writeFile(output, minifiedStyles, 'utf8', function(){
@@ -329,6 +376,10 @@ function isLocalCSS(file) {
 
 function log(string){
   if (VERBOSE){
-    console.log(string);
+    console.log(' '+string);
   }
+}
+
+function logTitle(string){
+  log(chalk.bgGreen.black.bold('\n '+string.toUpperCase()));
 }

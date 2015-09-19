@@ -1,8 +1,8 @@
 module.exports = {
   entryFile : 'banner/index.html',
   output : {
-    dir: 'banner/build',
-    html:'banner/index.html',
+    dir: 'build',
+    html:'index.html',
     css:'styles/styles.css',
     js:'banner.js'
   },
@@ -15,5 +15,5 @@ module.exports = {
       exclude:[]
     }
   },
-  copy: ['**/*.png', '**/*.jpg', '**/*.gif', '**/*.ttf', '**/*.woff', '**/*.otf']
+  copy: ['images/**', 'fonts/**/*.ttf', 'font/**/*.woff', 'fonts/**/*.otf']
 };

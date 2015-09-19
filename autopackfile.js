@@ -1,5 +1,5 @@
 module.exports = {
-  entryFile : undefined,
+  entryFile : 'banner/index.html',
   output : {
     dir: 'build',
     html:'index.html',
