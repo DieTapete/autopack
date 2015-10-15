@@ -1,5 +1,5 @@
 module.exports = {
-  entryFile : 'banner/index.html',
+  entryFile : 'index.html',
   output : {
     dir: 'build',
     html:'index.html',
@@ -15,6 +15,5 @@ module.exports = {
       exclude:[]
     }
   },
-  copy: ['images/**/*', 'fonts/**/*.ttf', 'font/**/*.woff', 'fonts/**/*.otf'],
-  remove: ['http://localhost:35729/livereload.js']
+  copy: ['**/*.png', '**/*.jpg', '**/*.gif', '**/*.ttf', '**/*.woff', '**/*.otf']
 };

@@ -8,6 +8,7 @@ var tildify = require('tildify');
 var interpret = require('interpret');
 var v8flags = require('v8flags');
 var argv = require('minimist')(process.argv.slice(2));
+var init = require('../src/init')
 
 // Set env var for ORIGINAL cwd
 // before anything touches it
@@ -27,8 +28,8 @@ process.once('exit', function(code) {
   }
 });
 
-var log = argv.silent ? function(){} : function(string){
-  console.log(string);
+var log = argv.silent ? function(){} : function(str){
+  console.log(str);
 }
 
 cli.on('require', function(name) {
@@ -57,7 +58,8 @@ function getArg(word){
 }
 cli.launch({
   cwd: argv.cwd,
-  configPath: argv.autopackfile,
+  configPath: argv.a || argv.autopackfile || argv.config,
+  init: argv.init,
   require: argv.require,
   completion: argv.completion,
 }, handleArguments);
@@ -72,10 +74,22 @@ function handleArguments(env) {
     process.exit(0);
   }
 
+  // autopack init - creates a autopackfile.js for you
+  if (argv._[0] === 'init'){
+    init(function(err){
+      if (err) {
+        log(chalk.red(err));
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+    return;
+  }
+
   if (!env.modulePath) {
     log(
       chalk.red('Local autopack not found in'),
-      chalk.magenta(tildify(env.cwd))
+      chalk.magenta(tildify(env.cwd || '.'))
     );
     log(chalk.red('Try running: npm install autopack'));
     process.exit(1);
@@ -96,10 +110,17 @@ function handleArguments(env) {
   // Chdir before requiring autopack to make sure
   // we let them chdir as needed
   if (process.cwd() !== env.cwd) {
-    process.chdir(env.cwd);
+    // process.chdir(env.cwd);
+    log(
+      // 'Working directory changed to '+
+      // chalk.magenta(tildify(env.cwd))
+    );
+  }
+  if (argv.cwd) {
+    process.chdir(argv.cwd);
     log(
       'Working directory changed to '+
-      chalk.magenta(tildify(env.cwd))
+      chalk.magenta(tildify(argv.cwd))
     );
   }
 

@@ -1,31 +1,38 @@
 var fs = require('fs');
 var path = require('path');
 
+var tildify = require('tildify');
+var loop = require('serial-loop');
 var _ = require('underscore');
 var cheerio = require('cheerio');
 var concat = require('concat-files');
 var UglifyJS = require("uglify-js");
 var CleanCSS = require('clean-css');
-
 var chalk = require('chalk');
-
 var copy = require('copy-files');
 var glob = require("glob");
 var mkdirp = require('mkdirp');
+var beautifyHTML = require('js-beautify').html;
 
-const  MINIFY_JS_DEFAULTS = {
-  inline: true,
-  local: true,
+const  PACK_JS_DEFAULTS = {
+  inline: {concat: false, minify:false},
+  local: {concat: true, minify:true},
   remote: false, //NOT SUPPORTED YET
-  exclude:[]
+  exclude:[],
+  append: 'body',
+  name:'bundle.js'
 };
-const  MINIFY_CSS_DEFAULTS = {
-  inline: true,
-  local: true,
+const  PACK_CSS_DEFAULTS = {
+  inline: {concat: false, minify:true},
+  local: {concat: true, minify:true},
   remote: false, //NOT SUPPORTED YET
-  exclude:[]
+  exclude:[],
+  append: 'head',
+  name:'style.css'
 };
-const  MINIFY_HTML_DEFAULTS = {
+const  PACK_HTML_DEFAULTS = {
+  minify:false,
+  name:'index.html',
   //options of htmlparser2 apply
   normalizeWhitespace: true
 };
@@ -47,38 +54,40 @@ module.exports = function(options){
   }
 
   //create output folder and sub directories
-  mkdirp(_options.output.dir, function(err){
+  mkdirp(_options.output, function(err){
     if (err) throw err;
-
+    log('creating dir '+_options.output+' if not alreay created.');
     var numSubDirectories = 0, numCreatedSubDirectories = 0;
     _.each(_options.output, function(target){
-      if (target != _options.output.dir){
+      if (target != _options.output){
         var directory = path.dirname(target);
         if (directory != '.') {
           log('Creating directory '+directory+' in output directory.');
           numSubDirectories++;
-          mkdirp(path.join(_options.output.dir,directory), function(){
+          mkdirp(path.join(_options.output, directory), function(){
             numCreatedSubDirectories++;
-            //All directories created, let's go.
+            //All directories created.
             if(numCreatedSubDirectories == numSubDirectories){
-              readFile(path.basename(_options.entryFile), function(htmlString){
-                compile(htmlString);
-              });
-              copyFiles();
+              log('sub directories created.');
             }
           });
         }
       }
     });
+    log('Opening Entry File '+path.basename(_options.entry));
+    readFile(path.basename(_options.entry), function(htmlString){
+      htmlString = remove(htmlString);
+      compile(htmlString);
+    });
+    copyFiles();
   });
-}
+};
 
 process.on('exit', function(code) {
   try {
-    log('reverting cwd back to '+originalCWD);
     process.chdir(originalCWD);
-    if (code == 0){
-      log(chalk.bgBlue.black.bold('\n Finished. You find your files neatly packed together in "'+_options.output.dir+'".'));
+    if (code === 0){
+      log(chalk.bgGreen.black.bold('\n Finished. You find your files neatly packed together in "'+tildify(path.join(process.cwd(), _options.output))+'".'));
     }
   }
   catch (err) {
@@ -90,55 +99,59 @@ function copyFiles(){
   logTitle('Copying files...');
   _.each(_options.copy, function(copyEntry){
     log("file pattern: "+copyEntry);
-    glob(copyEntry, {ignore:_options.output.dir}, function (err, files) {
-      if (err){
+    glob(copyEntry, {ignore:_options.output}, function (err, files) {
+      if (err) {
         console.error(err);
       }
-      else{
-        if (files.length>0){
+      else {
+        if (files.length>0) {
           _.each(files, function(file){
             log('trying to copy file '+file);
-            var targetFile = path.join(_options.output.dir, file);
-            if (fs.lstatSync(targetFile).isFile()) {
+            var targetFile = path.join(_options.output, file);
+            if (fs.lstatSync(file).isFile()) {
               mkdirp(path.dirname(targetFile), function (err) {
                   if (err) console.error(err);
                   else {
                     fs.createReadStream(file).pipe(fs.createWriteStream(targetFile));
                   }
               });
-            }else{
+            } else {
               log(chalk.bgYellow.black(targetFile +' is a directory. skipping.'));
             }
-          })
+          });
         }
       }
-    })
+    });
+  });
+}
+
+function remove(htmlString){
+  logTitle('removing references');
+  var $ = cheerio.load(htmlString);
+  _.each(_options.remove, function(item){
+    log('Searching for item '+item);
+    var $item = findItemBySelectorOrFilename($, item);
+    if ($item) {
+      $item.remove();
+    }
   });
 
-  /*copy({
-  files: {
-    'newname.txt': options.basePath + '/path/to/source.txt'
-  },
-  dest: '/path/to/destination',
-}, function (err) {
-  err ? log(err):log('All files copied.');
-});*/
+  return $.html();
 }
 
 function compile(htmlString) {
-  var out = _options.output;
   logTitle('compiling files');
   log('compiling js files..');
   scriptElements = getScripts(htmlString);
   var jsString = concatJS(scriptElements);
   if (jsString.length>1){
-    writeFile(path.join(out.dir, out.js), jsString, function(){
+    writeFile(path.join(_options.output, _options.pack.js.name), jsString, function(){
       log('done compiling js');
     });
   }
 
   log('compiling css files..');
-  compileStyles(_.pluck(getStyles(htmlString), 'href'), path.join(out.dir, out.css), function(){
+  compileStyles(_.pluck(getStyles(htmlString), 'href'), path.join(_options.output, _options.pack.css.name), function(){
     log('done compiling css');
     // onComplete && onComplete();
   });
@@ -148,16 +161,19 @@ function compile(htmlString) {
 
 
 function sanitizeOptions(options) {
-  options.minify.js = defaults(options.minify.js, MINIFY_JS_DEFAULTS);
-  options.minify.css = defaults(options.minify.css, MINIFY_CSS_DEFAULTS);
-  options.minify.html = defaults(options.minify.html, MINIFY_HTML_DEFAULTS);
+  options.pack = options.pack || options.minify;
+  options.entry = options.entry || options.entryFile;
 
-  normalizePaths(options.minify.js.exclude);
-  normalizePaths(options.minify.css.exclude);
+  options.pack.js = defaults(options.pack.js, PACK_JS_DEFAULTS);
+  options.pack.css = defaults(options.pack.css, PACK_CSS_DEFAULTS);
+  options.pack.html = defaults(options.pack.html, PACK_HTML_DEFAULTS);
 
-  options.basePath = path.dirname(options.entryFile);
-  // options.output.dir = options.output.dir;
-  // options.entryFile = path.resolve('', '');
+  normalizePaths(options.pack.js.exclude);
+  normalizePaths(options.pack.css.exclude);
+
+  options.basePath = path.dirname(options.entry);
+  options.remove = options.remove || [];
+  options.copy = options.copy || [];
 
   return options;
 }
@@ -179,14 +195,20 @@ function defaults(object, defaultOptions){
   }
 }
 
-// PARSE HTML
-
 function getScripts(htmlString){
+  var jsOptions = _options.pack.js;
+  var $ = cheerio.load(htmlString);
+  _.each(jsOptions.exclude, function(itemToExclude){
+    var $itemToExclude = findItemBySelectorOrFilename($, itemToExclude);
+    if ($itemToExclude) {
+      $itemToExclude.remove();
+    }
+  });
+  htmlString = $.html();
   var scriptElements = getTags(htmlString, 'script');
   scriptElements =  _.filter(scriptElements, function(element){
-    var jsOptions = _options.minify.js;
-    var result = !(isLocalJS(element.attribs) && _.contains(jsOptions.exclude, element.attribs.src));
-    result = result && (jsOptions.local && isLocalJS(element.attribs)) || (jsOptions.inline && isInlineJS(element.attribs));
+    var result = isLocalJS(element.attribs);
+    result = result && (jsOptions.local.concat && isLocalJS(element.attribs)) || (jsOptions.inline.concat && isInlineJS(element.attribs));
     return result;
   });
 
@@ -216,6 +238,7 @@ function getScripts(htmlString){
 
 //return local css files
 function getStyles(htmlString){
+  var result  = {local:null, inline:null};
   var styleElements = getTags(htmlString, 'link');
   styleElements =  _.filter(styleElements, function(element){
     var result = isLocalCSS(element.attribs);
@@ -223,7 +246,7 @@ function getStyles(htmlString){
     return result;
   });
   styleElements = _.pluck(styleElements, 'attribs');
-
+  result.local = styleElements;
   return styleElements;
 /*
   //return like {local:[], inline:[], remote:[]}
@@ -247,22 +270,22 @@ function getTags(htmlString, tag){
   return cheerio.load(htmlString)(tag);
 }
 
-// CONCAT AND MINIMIZE
+// CONCAT AND MINIFY
 function concatJS(input){
   var result = '';
   if (input.local.length) {
-    result = UglifyJS.minify(input.local, {
-      // outSourceMap: output+".map",
-      cwd:_options.basePath,
-      compress:true});
-    result = result.code;
+    result = concatSync(input.local)+';';
+  }
+  if (input.inline.length){
+    result += input.inline.join(';');
   }
 
-  if (input.inline.length){
-    result = UglifyJS.minify(result+';'+input.inline.join(';'), {
-      fromString: true,
-      outSourceMap: path.join(_options.output.dir, _options.output.js)+".map",
-      compress:true});
+  if (_options.pack.js.minify) {
+    result = UglifyJS.minify(input.local, {
+        // outSourceMap: output+".map",
+        cwd:_options.basePath,
+        compress:true
+      });
     result = result.code;
   }
 
@@ -271,7 +294,7 @@ function concatJS(input){
 
 function compileStyles(input, output, onComplete) {
   concat(input, output, function() {
-    if (_options.minify.css) {
+    if (_options.pack.css) {
       fs.readFile(output, 'utf8', function(){
         minifyStyles(output, output, onComplete);
       });
@@ -292,7 +315,7 @@ function compileHTML(data){
   $('script').each(function(index, element){
     if (_.contains(scriptElements.local, element.attribs.src)||
         _.contains(scriptElements.inline, element.attribs)){
-        //_options.minify.js.inline && isInlineJS(element.attribs)) {
+        //_options.pack.js.inline && isInlineJS(element.attribs)) {
       removedJS = true;
       $(this).remove();
     }
@@ -300,7 +323,13 @@ function compileHTML(data){
 
   //add bundled js script
   if (removedJS) {
-    $('body').after('<script type="text/javascript" charset="utf-8" src="'+_options.output.js+'"/>');
+    var $jsParent = $(_options.pack.js.append);
+    if ($jsParent.length == 1){
+      $jsParent.append('<script type="text/javascript" charset="utf-8" src="'+_options.pack.js.name+'"/>');
+    }
+    else {
+      console.error("Can't append JS to "+_options.pack.js.append+'. No distinct item found.')
+    }
   }
 
   //remove local css links
@@ -313,18 +342,24 @@ function compileHTML(data){
 
   //add bundled css
   if (removedCSS) {
-    $('head').append('<link rel="stylesheet" type="text/css" href="'+_options.output.css+'"/>');
+    var $cssParent = $(_options.pack.css.append);
+    if ($cssParent.length == 1){
+      $cssParent.append('<link rel="stylesheet" type="text/css" href="'+_options.pack.css.name+'"/>');
+    }
+    else {
+      console.error("Can't append CSS to "+_options.pack.css.append+'. No distinct item found.')
+    }
   }
 
-  var html = maybeMinifyHTML($.html());
-  writeFile(path.join(_options.output.dir, _options.output.html), html, function(){
+  var html = maybeMinifyHTML(beautifyHTML($.html(), {preserve_newlines:false}));
+  writeFile(path.join(_options.output, _options.pack.html.name), html, function(){
     log('done compiling html');
   });
 }
 
 function maybeMinifyHTML(html){
-  if (_options.minify.html !== false){
-    return cheerio.load(html, _options.minify.html).html();
+  if (_options.pack.html.minify !== false){
+    return cheerio.load(html, _options.pack.html).html();
   }
 
   return html;
@@ -374,6 +409,39 @@ function isLocalCSS(file) {
   return path.extname(filename) === '.css' && filename.isLocalFile();
 }
 
+function findItemBySelectorOrFilename($, selectorOrFilename){
+  var $item;
+  try{
+    $item = $(selectorOrFilename);
+  }
+  catch(err){
+    // if (selectorOrFilename.indexOf('//')!=-1) {
+      try{
+        $item = $('[src="'+selectorOrFilename+'"]');
+      }
+      catch(err){
+        console.error('Couldnt find item '+selectorOrFilename+'.');
+      }
+    // }
+  }
+
+  if ($item && $item.length>0){
+    return $item;
+  }
+
+  return null;
+}
+
+function concatSync(files) {
+  var str = '';
+  for (var i=0; i< files.length; i++){
+    var buffer = fs.readFileSync(files[i], 'utf8');
+    str += buffer;
+  }
+  return str;
+  // fs.writeFileSync(dest, str, 'utf8');
+}
+
 function log(string){
   if (VERBOSE){
     console.log(' '+string);
@@ -381,5 +449,5 @@ function log(string){
 }
 
 function logTitle(string){
-  log(chalk.bgGreen.black.bold('\n '+string.toUpperCase()));
+  log(chalk.bgBlue.black.bold('\n '+string.toUpperCase()));
 }
