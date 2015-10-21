@@ -142,7 +142,15 @@ function remove(htmlString){
 
 function compile(htmlString) {
   logTitle('processing files');
-  log('processing js files..');
+
+  processJS(htmlString);
+  processCSS(htmlString);
+
+  compileHTML(htmlString);
+}
+
+function processJS(htmlString){
+  log('processing js..');
   scriptElements = getScripts(htmlString);
   var jsOptions = _options.pack.js;
 
@@ -183,13 +191,52 @@ function compile(htmlString) {
       log('done processing js');
     });
   }
+}
 
-  log('processing css files..');
-  processStyles(_.pluck(getStyles(htmlString).local, 'href'), path.join(_options.output, _options.pack.css.name), function(){
-    log('done processing css');
-  });
+//processStyles(, path.join(_options.output, _options.pack.css.name), function(){
+function processCSS(htmlString){
+  log('processing css..');
+  styleElements = getStyles(htmlString);
+  var cssOptions = _options.pack.css;
 
-  compileHTML(htmlString);
+  var cssString = '';
+  var concatAll = cssOptions.local.concat && cssOptions.inline.concat;
+  var minifyAll = cssOptions.local.minify && cssOptions.inline.minify;
+  var localCSS = concatSync(_.pluck(styleElements.local, 'href'));
+
+  if (concatAll) {
+    var inlineCSS = styleElements.inline.join();
+    if (minifyAll) {
+      cssString = minifyStyles(localCSS+inlineCSS);
+    }
+    else {
+      if (cssOptions.local.minify){
+        localCSS = minifyStyles(localCSS);
+      }
+      if (cssOptions.inline.minify){
+        inlineCSS = minifyScripts(inlineCSS);
+      }
+      cssString = localCSS+inlineCSS;
+    }
+  }
+  else if (!concatAll) {
+    if (cssOptions.local.concat){
+      cssString = localCSS;
+      if (cssOptions.local.minify){
+        cssString = minifyStyles(cssString);
+      }
+    }
+    if (cssOptions.inline.minify){
+      //todo
+    }
+  }
+
+  if (cssString.length>1){
+    var bundleFile = path.join(_options.output, _options.pack.css.name);
+    writeFile(bundleFile, cssString, function(){
+      log('done processing css');
+    });
+  }
 }
 
 
@@ -315,6 +362,19 @@ function concatJS(input){
   return result;
 }
 
+function concatCSS(input){
+  concat(input, output, function() {
+    if (_options.pack.css.minify) {
+      fs.readFile(output, 'utf8', function(){
+        minifyStyles(output, output, onComplete);
+      });
+    }
+    else {
+      onComplete && onComplete();
+    }
+  });
+}
+
 //concat css and minify it if specified
 function processStyles(input, output, onComplete) {
   concat(input, output, function() {
@@ -399,15 +459,9 @@ function minifyScripts(jsString){
   return result.code;
 }
 
-function minifyStyles(input, output, onComplete){
-  // console.log('input:'+input);
-  // console.log('normalized:'+path.normalize(_options.basePath, input));
-  readFile(input, function(data){
-    var minifiedStyles = new CleanCSS().minify(data).styles;
-    fs.writeFile(output, minifiedStyles, 'utf8', function(){
-      onComplete();
-    });
-  })
+function minifyStyles(input){
+  return new CleanCSS().minify(input).styles;
+
 }
 
 // CONVENIENCE FUNCTIONS
