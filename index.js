@@ -128,11 +128,12 @@ function copyFiles(){
 function remove(htmlString){
   logTitle('removing references');
   var $ = cheerio.load(htmlString);
-  _.each(_options.remove, function(item){
-    log('Searching for item '+item);
-    var $item = findItemBySelectorOrFilename($, item);
-    if ($item) {
-      $item.remove();
+  _.each(_options.remove, function(element){
+    log('Searching for element '+element);
+    var $element = findElementBySelectorOrFilename($, element);
+    if ($element) {
+      log('Element '+element+' found. Removing...');
+      $element.remove();
     }
   });
 
@@ -140,20 +141,52 @@ function remove(htmlString){
 }
 
 function compile(htmlString) {
-  logTitle('compiling files');
-  log('compiling js files..');
+  logTitle('processing files');
+  log('processing js files..');
   scriptElements = getScripts(htmlString);
-  var jsString = concatJS(scriptElements);
+  var jsOptions = _options.pack.js;
+
+  var jsString = '';
+  var concatAll = jsOptions.local.concat && jsOptions.inline.concat;
+  var minifyAll = jsOptions.local.minify && jsOptions.inline.minify;
+
+  if (concatAll && minifyAll){
+    jsString = minifyScripts(concatSync(scriptElements.local)+';'+scriptElements.inline.join(';'));
+  }
+  else if (concatAll && !minifyAll){
+    var localJS = concatSync(scriptElements.local);
+    var inlineJS = scriptElements.inline.join(';');
+    if (jsOptions.local.minify){
+      localJS = minifyScripts(localJS);
+    }
+    if (jsOptions.inline.minify){
+      inlineJS = minifyScripts(inlineJS);
+    }
+
+    jsString = localJS+';'+inlineJS;
+  }
+  else if (!concatAll) {
+    if (jsOptions.local.concat){
+      jsString = concatSync(scriptElements.local);
+      if (jsOptions.local.minify){
+        jsString = minifyScripts(jsString);
+      }
+    }
+    if (jsOptions.inline.minify){
+      //todo
+    }
+  }
+
   if (jsString.length>1){
-    writeFile(path.join(_options.output, _options.pack.js.name), jsString, function(){
-      log('done compiling js');
+    var bundleFile = path.join(_options.output, _options.pack.js.name);
+    writeFile(bundleFile, jsString, function(){
+      log('done processing js');
     });
   }
 
-  log('compiling css files..');
-  compileStyles(_.pluck(getStyles(htmlString), 'href'), path.join(_options.output, _options.pack.css.name), function(){
-    log('done compiling css');
-    // onComplete && onComplete();
+  log('processing css files..');
+  processStyles(_.pluck(getStyles(htmlString).local, 'href'), path.join(_options.output, _options.pack.css.name), function(){
+    log('done processing css');
   });
 
   compileHTML(htmlString);
@@ -199,7 +232,7 @@ function getScripts(htmlString){
   var jsOptions = _options.pack.js;
   var $ = cheerio.load(htmlString);
   _.each(jsOptions.exclude, function(itemToExclude){
-    var $itemToExclude = findItemBySelectorOrFilename($, itemToExclude);
+    var $itemToExclude = findElementBySelectorOrFilename($, itemToExclude);
     if ($itemToExclude) {
       $itemToExclude.remove();
     }
@@ -238,32 +271,22 @@ function getScripts(htmlString){
 
 //return local css files
 function getStyles(htmlString){
-  var result  = {local:null, inline:null};
-  var styleElements = getTags(htmlString, 'link');
-  styleElements =  _.filter(styleElements, function(element){
+  var result  = {};
+  var localCSS = getTags(htmlString, 'link');
+  localCSS =  _.filter(localCSS, function(element){
     var result = isLocalCSS(element.attribs);
     if (result) log ('\tfound css file '+element.attribs.href);
     return result;
   });
-  styleElements = _.pluck(styleElements, 'attribs');
-  result.local = styleElements;
-  return styleElements;
-/*
-  //return like {local:[], inline:[], remote:[]}
-  styleElements =  _.groupBy(styleElements, function(element){
-    if (isLocalCSS(element.attribs)){
-      log ('\tfound js '+element.attribs.src);
-      return 'local';
-    }
-    else if (isInlineCSS(element.attribs)){
-      log ('\tfound inline css '+cheerio(element).text().substr(0, 30));
-      return 'inline';
-    }
-    //else if (isInlineJS(element)){
-      // return 'inline';
-    // }
-    else return 'other';
-  });*/
+  localCSS = _.pluck(localCSS, 'attribs');
+  result.local = localCSS;
+
+  result.inline = getTags(htmlString, 'style');
+  result.inline = _.map(result.inline, function(element){
+    return cheerio(element).text();
+  });
+
+  return result;
 }
 
 function getTags(htmlString, tag){
@@ -292,9 +315,10 @@ function concatJS(input){
   return result;
 }
 
-function compileStyles(input, output, onComplete) {
+//concat css and minify it if specified
+function processStyles(input, output, onComplete) {
   concat(input, output, function() {
-    if (_options.pack.css) {
+    if (_options.pack.css.minify) {
       fs.readFile(output, 'utf8', function(){
         minifyStyles(output, output, onComplete);
       });
@@ -365,6 +389,16 @@ function maybeMinifyHTML(html){
   return html;
 }
 
+function minifyScripts(jsString){
+  var result = UglifyJS.minify(jsString, {
+      // outSourceMap: output+".map",
+      fromString:true,
+      cwd:_options.basePath,
+      compress:true
+    });
+  return result.code;
+}
+
 function minifyStyles(input, output, onComplete){
   // console.log('input:'+input);
   // console.log('normalized:'+path.normalize(_options.basePath, input));
@@ -409,24 +443,22 @@ function isLocalCSS(file) {
   return path.extname(filename) === '.css' && filename.isLocalFile();
 }
 
-function findItemBySelectorOrFilename($, selectorOrFilename){
-  var $item;
-  try{
-    $item = $(selectorOrFilename);
+function findElementBySelectorOrFilename($, selectorOrFilename){
+  var $element;
+  try {
+    $element = $(selectorOrFilename);
   }
-  catch(err){
-    // if (selectorOrFilename.indexOf('//')!=-1) {
-      try{
-        $item = $('[src="'+selectorOrFilename+'"]');
+  catch(err) {
+      try {
+        $element = $('[src="'+selectorOrFilename+'"]');
       }
       catch(err){
-        console.error('Couldnt find item '+selectorOrFilename+'.');
+        console.error('Couldnt find element '+selectorOrFilename+'.');
       }
-    // }
   }
 
-  if ($item && $item.length>0){
-    return $item;
+  if ($element && $element.length>0){
+    return $element;
   }
 
   return null;
@@ -439,7 +471,6 @@ function concatSync(files) {
     str += buffer;
   }
   return str;
-  // fs.writeFileSync(dest, str, 'utf8');
 }
 
 function log(string){
