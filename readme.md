@@ -11,7 +11,11 @@ __AutoPack is still in heavy development. Please file any bugs you find and/or c
 ```sh
 $ npm install -g autopack
 ```
-2. Create a configuration file in your current working directory named `autopackfile.js`. See section <a href="#configuration">Configuration</a>.
+3. CD to your projects directory and create a configuration file.
+```sh
+$ cd my_project
+$ autopack init
+```
 
 3. Run `autopack`
 ```sh
@@ -24,13 +28,21 @@ Run `autopack` in your console with the following optional flags.
 Flag                        | Description
 ----------------------------|---------------------------------------------------------
 `--autopackfile`, `--config`| Specify the location of the autopackfile.
-`--init`                    | Create an autopackfile in the current directory.
 `--cwd`                     | Change the current working directory.
 `-i`, `--input`             | The HTML file you want AutoPack to work on.
 `-o`, `--output`            | The directory you want AutoPack to save the converted files to.
 
+#### CLI Commands
+Command                     | Description
+----------------------------|---------------------------------------------------------
+`init`                      | Create an autopackfile in the current directory.
+
+
+
+
+
+#### API usage (i.e. in a build process) Needs further testing
 <del>
-#### ~~API usage (i.e. in a build process)~~ Needs further testing
 Install the package via npm:
 ```sh
 $ npm install autopack --savedev
@@ -93,25 +105,30 @@ Example autopackfile
 ```js
 module.exports = {
   entry: 'index.html',
-  output: {
-    dir: 'build',
-    html: 'index.html',
-    css: 'styles.css',
-    js: 'banner.js'
-  },
-  pack: {
-    css: "styles.css",
-    js: {
-      file: 'banner.js',
-      minify: false,
-      exclude: ['scripts/banner.js'],
-      append: 'head',
-      inline: true
+  output: 'build',
+  pack:{
+    html:{
+      name: 'index.html',
+      minify: false
+    },
+    css:{
+      name: 'style.css',
+      local: { concat: true, minify: true },
+      inline: { concat: false, minify: true },
+      exclude: [],
+      append: 'head'
+    },
+    js:{
+      name: 'bundle.js',
+      local: { concat: true, minify: true },
+      inline: { concat: false, minify: true },
+      exclude: ['scripts/settings.js'],
+      append: 'body'
     }
   },
   //files found under these patterns will be copied into the output dir
   copy: ['images/**', '**/*.gif', 'fonts/*.ttf', 'fonts/*.woff', 'fonts/*.otf'],
-  //These resources will be removed from the html code
+  //These resources/elements will be removed from the html code
   remove:['http://localhost:35729/livereload.js', '#dev-info', 'debug.css']
 };
 ```
