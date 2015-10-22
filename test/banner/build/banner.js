@@ -1,1 +1,0 @@
-Banner.copyOutY="-=10",extend(Banner,"start",function(){});
