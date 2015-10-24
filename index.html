@@ -14,12 +14,12 @@
       <h1 class="project-name">autopack</h1>
       <h2 class="project-tagline">get your scripts together</h2>
       <a href="https://github.com/DieTapete/autopack" class="btn">View on GitHub</a>
-      <a href="https://github.com/DieTapete/autopack/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/DieTapete/autopack/tarball/master" class="btn">Download .tar.gz</a>
+      <a href="https://npmjs.com/package/autopack" class="btn">View on npm</a>
     </section>
 
     <section class="main-content">
-      <p><img src="http://ipfs.pics/ipfs/QmeVeB9t5EPZjLHP9cCZbeSqb1wQccoJR1vpKFYg6YRuwR" alt="autopack logo">
+      <img align="center" class="logo" src="http://ipfs.pics/ipfs/QmeVeB9t5EPZjLHP9cCZbeSqb1wQccoJR1vpKFYg6YRuwR" alt="autopack logo">
+      <p>
 AutoPack runs through all the JavaScript and CSS references in your HTML file and spits out an HTML file that only loads one bundled and minimized .css and .js file. It also copies other files you specify into your build directory. Everything is configurable; AutoPack can also do nothing at all if you want it to.</p>
 
 <h2>
@@ -108,25 +108,6 @@ $ autopack init</pre></div>
 </tbody>
 </table>
 
-<h4>
-<a id="api-usage-ie-in-a-build-process-needs-further-testing" class="anchor" href="#api-usage-ie-in-a-build-process-needs-further-testing" aria-hidden="true"><span class="octicon octicon-link"></span></a>API usage (i.e. in a build process) Needs further testing</h4>
-
-<del>
-Install the package via npm:
-```sh
-$ npm install autopack --savedev
-```
-Require it in your build file.
-```js
-var autopack = require('autopack');
-```
-Call the `autopack` function with options.
-```js
-autopack({ input: "dev/index.html",
-          output: "build/index.html" });
-```
-</del>
-
 <h2>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h2>
 
@@ -149,9 +130,9 @@ autopack({ input: "dev/index.html",
         minify<span class="pl-k">:</span><span class="pl-c1">false</span>  <span class="pl-c">//minify inline javascript</span>
       },
       <span class="pl-c">// filenames, urls or dom-selectors of elements you want to exclude from the process,</span>
-      exclude<span class="pl-k">:</span> [] 
+      exclude<span class="pl-k">:</span> []
       <span class="pl-c">// selector of element where you want to append the bundle script tag to</span>
-      append<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>body<span class="pl-pds">'</span></span> 
+      append<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>body<span class="pl-pds">'</span></span>
     },
     css<span class="pl-k">:</span> { <span class="pl-c">//either set to true to use the defaults or use an object</span>
       name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>style.css<span class="pl-pds">'</span></span>, <span class="pl-c">//name of the resulting concatenated css</span>
@@ -166,7 +147,7 @@ autopack({ input: "dev/index.html",
       <span class="pl-c">// selector of element where you want to append the bundle css tag to</span>
       append<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>head<span class="pl-pds">'</span></span>,
       <span class="pl-c">// filenames, urls or dom-selectors of elements you want to exclude from the process </span>
-      exclude<span class="pl-k">:</span> [] 
+      exclude<span class="pl-k">:</span> []
     },
 
   },
