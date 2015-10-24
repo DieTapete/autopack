@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>autopack by DieTapete</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">autopack</h1>
+      <h2 class="project-tagline">get your scripts together</h2>
+      <a href="https://github.com/DieTapete/autopack" class="btn">View on GitHub</a>
+      <a href="https://github.com/DieTapete/autopack/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/DieTapete/autopack/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <p><img src="http://ipfs.pics/ipfs/QmeVeB9t5EPZjLHP9cCZbeSqb1wQccoJR1vpKFYg6YRuwR" alt="autopack logo">
+AutoPack runs through all the JavaScript and CSS references in your HTML file and spits out an HTML file that only loads one bundled and minimized .css and .js file. It also copies other files you specify into your build directory. Everything is configurable; AutoPack can also do nothing at all if you want it to.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<h4>
+<a id="command-line-usage" class="anchor" href="#command-line-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Command Line usage</h4>
+
+<ol>
+<li>Install the package globally:</li>
+</ol>
+
+<div class="highlight highlight-source-shell"><pre>$ npm install -g autopack</pre></div>
+
+<ol>
+<li>CD to your projects directory and create a configuration file.</li>
+</ol>
+
+<div class="highlight highlight-source-shell"><pre>$ <span class="pl-c1">cd</span> my_project
+$ autopack init</pre></div>
+
+<ol>
+<li>Run <code>autopack</code>
+</li>
+</ol>
+
+<div class="highlight highlight-source-shell"><pre>$ autopack</pre></div>
+
+<h4>
+<a id="cli-flags" class="anchor" href="#cli-flags" aria-hidden="true"><span class="octicon octicon-link"></span></a>CLI Flags</h4>
+
+<p>Run <code>autopack</code> in your console with the following optional flags.</p>
+
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>--autopackfile</code>, <code>--config</code>
+</td>
+<td>Specify the location of the autopackfile.</td>
+</tr>
+<tr>
+<td><code>--cwd</code></td>
+<td>Change the current working directory.</td>
+</tr>
+<tr>
+<td>
+<code>-i</code>, <code>--input</code>
+</td>
+<td>The HTML file you want AutoPack to work on.</td>
+</tr>
+<tr>
+<td>
+<code>-o</code>, <code>--output</code>
+</td>
+<td>The directory you want AutoPack to save the converted files to.</td>
+</tr>
+</tbody>
+</table>
+
+<h4>
+<a id="cli-commands" class="anchor" href="#cli-commands" aria-hidden="true"><span class="octicon octicon-link"></span></a>CLI Commands</h4>
+
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>autopack</code></td>
+<td>Run autopack</td>
+</tr>
+<tr>
+<td><code>autopack init</code></td>
+<td>Create an autopackfile in the current directory.</td>
+</tr>
+</tbody>
+</table>
+
+<h4>
+<a id="api-usage-ie-in-a-build-process-needs-further-testing" class="anchor" href="#api-usage-ie-in-a-build-process-needs-further-testing" aria-hidden="true"><span class="octicon octicon-link"></span></a>API usage (i.e. in a build process) Needs further testing</h4>
+
+<del>
+Install the package via npm:
+```sh
+$ npm install autopack --savedev
+```
+Require it in your build file.
+```js
+var autopack = require('autopack');
+```
+Call the `autopack` function with options.
+```js
+autopack({ input: "dev/index.html",
+          output: "build/index.html" });
+```
+</del>
+
+<h2>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h2>
+
+<p>You can configure AutoPack by creating a file named autopackfile.js in the root directory of your project. The default configuration looks like this:</p>
+
+<div class="highlight highlight-source-js"><pre>{
+  pack<span class="pl-k">:</span>{
+    html<span class="pl-k">:</span> {
+      name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>index.html<span class="pl-pds">'</span></span>, <span class="pl-c">//name of the resulting html file, will be same as entry file if omitted</span>
+      minify<span class="pl-k">:</span> <span class="pl-c1">false</span> <span class="pl-c">//set to true if you want to minify the resulting html</span>
+    },
+    js<span class="pl-k">:</span> { <span class="pl-c">//either set to true to use the defaults or use an object</span>
+      name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>bundle.js<span class="pl-pds">'</span></span>, <span class="pl-c">//name of the resulting concatenated javascript</span>
+      local<span class="pl-k">:</span> {
+        concat<span class="pl-k">:</span><span class="pl-c1">true</span>, <span class="pl-c">//add local javascript file references to the bundled file</span>
+        minify<span class="pl-k">:</span><span class="pl-c1">true</span>  <span class="pl-c">//minify local javascript files</span>
+      },
+      inline<span class="pl-k">:</span> {
+        concat<span class="pl-k">:</span><span class="pl-c1">false</span>, <span class="pl-c">//add inline javascript to the bundled file</span>
+        minify<span class="pl-k">:</span><span class="pl-c1">false</span>  <span class="pl-c">//minify inline javascript</span>
+      },
+      <span class="pl-c">// filenames, urls or dom-selectors of elements you want to exclude from the process,</span>
+      exclude<span class="pl-k">:</span> [] 
+      <span class="pl-c">// selector of element where you want to append the bundle script tag to</span>
+      append<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>body<span class="pl-pds">'</span></span> 
+    },
+    css<span class="pl-k">:</span> { <span class="pl-c">//either set to true to use the defaults or use an object</span>
+      name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>style.css<span class="pl-pds">'</span></span>, <span class="pl-c">//name of the resulting concatenated css</span>
+      local<span class="pl-k">:</span> {
+        concat<span class="pl-k">:</span><span class="pl-c1">true</span>, <span class="pl-c">//add local css file references to the bundled file</span>
+        minify<span class="pl-k">:</span><span class="pl-c1">true</span>  <span class="pl-c">//minify local css files</span>
+      },
+      inline<span class="pl-k">:</span> {
+        concat<span class="pl-k">:</span><span class="pl-c1">false</span>, <span class="pl-c">//add inline css to the bundled file</span>
+        minify<span class="pl-k">:</span><span class="pl-c1">false</span>  <span class="pl-c">//minify inline css</span>
+      },
+      <span class="pl-c">// selector of element where you want to append the bundle css tag to</span>
+      append<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>head<span class="pl-pds">'</span></span>,
+      <span class="pl-c">// filenames, urls or dom-selectors of elements you want to exclude from the process </span>
+      exclude<span class="pl-k">:</span> [] 
+    },
+
+  },
+  copy<span class="pl-k">:</span> [], <span class="pl-c">//files found under these patterns will be copied into the output directory</span>
+  remove<span class="pl-k">:</span> [] <span class="pl-c">// filenames, urls or dom-selectors of elements you want to remove from the resulting html</span>
+}</pre></div>
+
+<p>Example autopackfile</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">module</span>.exports <span class="pl-k">=</span> {
+  entry<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>index.html<span class="pl-pds">'</span></span>,
+  output<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>build<span class="pl-pds">'</span></span>,
+  pack<span class="pl-k">:</span>{
+    html<span class="pl-k">:</span>{
+      name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>index.html<span class="pl-pds">'</span></span>,
+      minify<span class="pl-k">:</span> <span class="pl-c1">false</span>
+    },
+    css<span class="pl-k">:</span>{
+      name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>style.css<span class="pl-pds">'</span></span>,
+      local<span class="pl-k">:</span> { concat<span class="pl-k">:</span> <span class="pl-c1">true</span>, minify<span class="pl-k">:</span> <span class="pl-c1">true</span> },
+      inline<span class="pl-k">:</span> { concat<span class="pl-k">:</span> <span class="pl-c1">false</span>, minify<span class="pl-k">:</span> <span class="pl-c1">true</span> }
+    },
+    js<span class="pl-k">:</span>{
+      name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>bundle.js<span class="pl-pds">'</span></span>,
+      local<span class="pl-k">:</span> { concat<span class="pl-k">:</span> <span class="pl-c1">true</span>, minify<span class="pl-k">:</span> <span class="pl-c1">true</span> },
+      inline<span class="pl-k">:</span> { concat<span class="pl-k">:</span> <span class="pl-c1">false</span>, minify<span class="pl-k">:</span> <span class="pl-c1">true</span> },
+      exclude<span class="pl-k">:</span> [<span class="pl-s"><span class="pl-pds">'</span>scripts/settings.js<span class="pl-pds">'</span></span>]
+    }
+  },
+  <span class="pl-c">//files found under these patterns will be copied into the output dir</span>
+  copy<span class="pl-k">:</span> [<span class="pl-s"><span class="pl-pds">'</span>images/**<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>**/*.gif<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>fonts/*.ttf<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>fonts/*.woff<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>fonts/*.otf<span class="pl-pds">'</span></span>],
+  <span class="pl-c">//These resources/elements will be removed from the html code</span>
+  remove<span class="pl-k">:</span>[<span class="pl-s"><span class="pl-pds">'</span>http://localhost:35729/livereload.js<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>#dev-info<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>debug.css<span class="pl-pds">'</span></span>]
+};</pre></div>
+
+<h2>
+<a id="known-issues" class="anchor" href="#known-issues" aria-hidden="true"><span class="octicon octicon-link"></span></a>Known Issues</h2>
+
+<p>AutoPack is still a work in progress. Don't expect it to work rightaway in your project. If you find any issues please report them.</p>
+
+<h4>
+<a id="script-dependency" class="anchor" href="#script-dependency" aria-hidden="true"><span class="octicon octicon-link"></span></a>Script dependency</h4>
+
+<p>AutoPack can alter the order in which scripts are executed if for example only local scripts are being concatenated. This can result in problems with dependencies in inline scripts. Consider the following scenario:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c">//settings.js</span>
+mySettings <span class="pl-k">=</span> {background<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>#fff<span class="pl-pds">'</span></span>};</pre></div>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c">//main.js</span>
+<span class="pl-k">function</span> <span class="pl-en">start</span>(){
+  <span class="pl-en">console</span>.<span class="pl-c1">log</span>(mySettings.<span class="pl-c1">background</span>);
+}</pre></div>
+
+<div class="highlight highlight-text-html-basic"><pre>&lt;<span class="pl-ent">script</span> <span class="pl-e">src</span>=<span class="pl-s"><span class="pl-pds">"</span>settings.js<span class="pl-pds">"</span></span>/&gt;
+<span class="pl-s1">&lt;<span class="pl-ent">script</span>&gt; mySettings.<span class="pl-c1">background</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>#000<span class="pl-pds">'</span></span>; &lt;/<span class="pl-ent">script</span>&gt;</span>
+&lt;<span class="pl-ent">script</span> <span class="pl-e">src</span>=<span class="pl-s"><span class="pl-pds">"</span>main.js<span class="pl-pds">"</span></span>/&gt;</pre></div>
+
+<p>The packed version can result in the following HTML:</p>
+
+<div class="highlight highlight-text-html-basic"><pre><span class="pl-s1">&lt;<span class="pl-ent">script</span>&gt; mySettings.<span class="pl-c1">background</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>#000<span class="pl-pds">'</span></span>; &lt;/<span class="pl-ent">script</span>&gt;</span>
+&lt;<span class="pl-ent">script</span> <span class="pl-e">src</span>=<span class="pl-s"><span class="pl-pds">"</span>bundle.js<span class="pl-pds">"</span></span>/&gt;</pre></div>
+
+<p>Now the inline script is not able to find the variable <code>mySettings</code> (which is being set in <code>settings.js</code>). To get rid of problems like this either append the resulting JavaScript file before the inline script or add additional logic to run the script after everything is loaded:</p>
+
+<div class="highlight highlight-text-html-basic"><pre><span class="pl-s1">&lt;<span class="pl-ent">script</span> <span class="pl-e">src</span>=<span class="pl-s"><span class="pl-pds">"</span>settings.js<span class="pl-pds">"</span></span>&gt;</span>
+<span class="pl-s1"><span class="pl-k">&lt;</span>script<span class="pl-k">&gt;</span></span>
+<span class="pl-s1"><span class="pl-c1">window</span>.<span class="pl-en">onload</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(){ mySettings.<span class="pl-c1">background</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>#000<span class="pl-pds">'</span></span>; start(); }</span>
+<span class="pl-s1">&lt;/<span class="pl-ent">script</span>&gt;</span>
+<span class="pl-s1">&lt;<span class="pl-ent">script</span> <span class="pl-e">src</span>=<span class="pl-s"><span class="pl-pds">"</span>main.js<span class="pl-pds">"</span></span>&gt;</span></pre></div>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/DieTapete/autopack">autopack</a> is maintained by <a href="https://github.com/DieTapete">DieTapete</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+            <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-69257645-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
