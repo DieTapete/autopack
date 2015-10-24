@@ -1,4 +1,4 @@
-<div style="text-align:center"><img src ="http://ipfs.pics/QmeVeB9t5EPZjLHP9cCZbeSqb1wQccoJR1vpKFYg6YRuwR" alt="logo"/></div>
+<div style="text-align:center"><img src ="http://ipfs.pics/ipfs/QmeVeB9t5EPZjLHP9cCZbeSqb1wQccoJR1vpKFYg6YRuwR" alt="logo"/></div>
 # AutoPack
 
 #### Get your scripts together
