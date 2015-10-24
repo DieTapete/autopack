@@ -1,7 +1,7 @@
 {
   "name": "autopack",
   "version": "0.1.0",
-  "description": "Checks your HTML for references to javascript and css and bundles it all into one .css and .js file.",
+  "description": "Checks your HTML for references to javascript and css and concats and minifies it all into one .css and .js file.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,12 +11,22 @@
   },
   "keywords": [
     "minimizer",
+    "concatenation",
+    "build tool",
+  "banner",
     "packing",
     "html",
     "minification"
   ],
   "author": "Henner Woehler <info@henner-woehler.de> (http://www.henner-woehler.de)",
-  "license": "ISC",
+  "license": "MIT",
+  "repository" :
+  { "type" : "git"
+  , "url" : "https://github.com/dietapete/autopack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DieTapete/autopack/issues"
+  },
   "dependencies": {
     "bluebird": "^2.9.34",
     "chalk": "^1.1.0",

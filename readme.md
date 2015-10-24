@@ -1,4 +1,5 @@
-# AutoPack
+# ![](http://ipfs.pics/QmeVeB9t5EPZjLHP9cCZbeSqb1wQccoJR1vpKFYg6YRuwR) AutoPack
+
 #### Get your scripts together
 AutoPack runs through all the JavaScript and CSS references in your HTML file and spits out an HTML file that only loads one bundled and minimized .css and .js file. It also copies other files you specify into your build directory. Everything is configurable; AutoPack can also do nothing at all if you want it to.
 
@@ -35,7 +36,8 @@ Flag                        | Description
 #### CLI Commands
 Command                     | Description
 ----------------------------|---------------------------------------------------------
-`init`                      | Create an autopackfile in the current directory.
+`autopack`                  | Run autopack
+`autopack init`             | Create an autopackfile in the current directory.
 
 
 
@@ -114,16 +116,13 @@ module.exports = {
     css:{
       name: 'style.css',
       local: { concat: true, minify: true },
-      inline: { concat: false, minify: true },
-      exclude: [],
-      append: 'head'
+      inline: { concat: false, minify: true }
     },
     js:{
       name: 'bundle.js',
       local: { concat: true, minify: true },
       inline: { concat: false, minify: true },
-      exclude: ['scripts/settings.js'],
-      append: 'body'
+      exclude: ['scripts/settings.js']
     }
   },
   //files found under these patterns will be copied into the output dir
