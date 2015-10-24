@@ -170,3 +170,7 @@ window.onload = function(){ mySettings.background = '#000'; start(); }
 </script>
 <script src="main.js">
 ```
+
+[downloads-image]: http://img.shields.io/npm/dm/autopack.svg
+[npm-url]: https://npmjs.org/package/autopack
+[npm-image]: http://img.shields.io/npm/v/autopack.svg
