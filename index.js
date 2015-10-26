@@ -157,7 +157,6 @@ function processJS(htmlString){
   var jsString = '';
   var concatAll = jsOptions.local.concat && jsOptions.inline.concat;
   var minifyAll = jsOptions.local.minify && jsOptions.inline.minify;
-
   if (concatAll && minifyAll){
     jsString = minifyScripts(concatSync(scriptElements.local)+';'+scriptElements.inline.join(';'));
   }
@@ -205,7 +204,7 @@ function processCSS(htmlString){
   var localCSS = concatSync(_.pluck(styleElements.local, 'href'));
 
   if (concatAll) {
-    var inlineCSS = styleElements.inline.join();
+    var inlineCSS = styleElements.inline.join(';');
     if (minifyAll) {
       cssString = minifyStyles(localCSS+inlineCSS);
     }
@@ -519,10 +518,10 @@ function findElementBySelectorOrFilename($, selectorOrFilename){
 }
 
 function concatSync(files) {
-  var str = '';
+  var str = ';';
   for (var i=0; i< files.length; i++){
     var buffer = fs.readFileSync(files[i], 'utf8');
-    str += buffer;
+    str += buffer+';';
   }
   return str;
 }
