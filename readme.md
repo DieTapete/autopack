@@ -171,6 +171,11 @@ window.onload = function(){ mySettings.background = '#000'; start(); }
 <script src="main.js">
 ```
 
+## Version History
+- 0.1.1
+  - FIXED: Parse Error when concatenating files.
+- 0.1.0 Initial Release
+
 [downloads-image]: http://img.shields.io/npm/dm/autopack.svg
 [npm-url]: https://npmjs.org/package/autopack
 [npm-image]: http://img.shields.io/npm/v/autopack.svg
