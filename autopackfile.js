@@ -1,14 +1,14 @@
-modul.exports = { entry: 'index.html',
+module.exports = { entry: 'index.html',
   output: 'build',
-  pack: 
+  pack:
    { html: { name: 'index.html', minify: false },
-     css: 
+     css:
       { name: 'style.css',
         local: { concat: true, minify: true },
         inline: { concat: false, minify: true },
         exclude: [],
         append: 'head' },
-     js: 
+     js:
       { name: 'bundle.js',
         local: { concat: true, minify: true },
         inline: { concat: false, minify: true },

@@ -158,10 +158,10 @@ function processJS(htmlString){
   var concatAll = jsOptions.local.concat && jsOptions.inline.concat;
   var minifyAll = jsOptions.local.minify && jsOptions.inline.minify;
   if (concatAll && minifyAll){
-    jsString = minifyScripts(concatSync(scriptElements.local)+';'+scriptElements.inline.join(';'));
+    jsString = minifyScripts(concatSync(scriptElements.local, ';')+';'+scriptElements.inline.join(';'));
   }
   else if (concatAll && !minifyAll){
-    var localJS = concatSync(scriptElements.local);
+    var localJS = concatSync(scriptElements.local,';');
     var inlineJS = scriptElements.inline.join(';');
     if (jsOptions.local.minify){
       localJS = minifyScripts(localJS);
@@ -174,7 +174,7 @@ function processJS(htmlString){
   }
   else if (!concatAll) {
     if (jsOptions.local.concat){
-      jsString = concatSync(scriptElements.local);
+      jsString = concatSync(scriptElements.local,';');
       if (jsOptions.local.minify){
         jsString = minifyScripts(jsString);
       }
@@ -204,7 +204,7 @@ function processCSS(htmlString){
   var localCSS = concatSync(_.pluck(styleElements.local, 'href'));
 
   if (concatAll) {
-    var inlineCSS = styleElements.inline.join(';');
+    var inlineCSS = styleElements.inline.join(' ');
     if (minifyAll) {
       cssString = minifyStyles(localCSS+inlineCSS);
     }
@@ -343,10 +343,10 @@ function getTags(htmlString, tag){
 function concatJS(input){
   var result = '';
   if (input.local.length) {
-    result = concatSync(input.local)+';';
+    result = concatSync(input.local)+' ';
   }
   if (input.inline.length){
-    result += input.inline.join(';');
+    result += input.inline.join(' ');
   }
 
   if (_options.pack.js.minify) {
@@ -396,7 +396,7 @@ function compileHTML(data){
 
   //remove bundled js script tags
   $('script').each(function(index, element){
-    if (_.contains(scriptElements.local, element.attribs.src)||
+    if (_.contains(scriptElements.local, element.attribs.src) ||
         _.contains(scriptElements.inline, element.attribs)){
         //_options.pack.js.inline && isInlineJS(element.attribs)) {
       removedJS = true;
@@ -517,11 +517,12 @@ function findElementBySelectorOrFilename($, selectorOrFilename){
   return null;
 }
 
-function concatSync(files) {
-  var str = ';';
+function concatSync(files, separator) {
+  separator = separator || ' ';
+  var str = separator;
   for (var i=0; i< files.length; i++){
     var buffer = fs.readFileSync(files[i], 'utf8');
-    str += buffer+';';
+    str += buffer+separator;
   }
   return str;
 }

@@ -172,6 +172,8 @@ window.onload = function(){ mySettings.background = '#000'; start(); }
 ```
 
 ## Version History
+- 0.1.2
+  - FIXED: CSS concatenation caused an issue in IE.
 - 0.1.1
   - FIXED: Parse Error when concatenating files.
 - 0.1.0 Initial Release

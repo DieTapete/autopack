@@ -1,6 +1,6 @@
 {
   "name": "autopack",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Checks your HTML for references to javascript and css and concats and minifies it all into one .css and .js file.",
   "main": "index.js",
   "scripts": {
