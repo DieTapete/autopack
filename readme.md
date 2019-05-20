@@ -5,7 +5,7 @@
 **Get your scripts together**  
 AutoPack runs through all the JavaScript and CSS references in your HTML file and spits out an HTML file that only loads one bundled and minimized .css and .js file. It also copies other files you specify into your build directory. Everything is configurable; AutoPack can also do nothing at all if you want it to.
 
-__AutoPack is still in heavy development. Please file any bugs you find and/or contribute.__
+__Please file any bugs you find and/or contribute.__
 
 ## Usage
 
