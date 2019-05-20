@@ -1,4 +1,3 @@
-<p align="center"><img width="128" src ="http://ipfs.pics/ipfs/QmeVeB9t5EPZjLHP9cCZbeSqb1wQccoJR1vpKFYg6YRuwR" alt="logo"/></p>
 # AutoPack
 
 [![NPM version][npm-image]][npm-url] [![Downloads][downloads-image]][npm-url]
